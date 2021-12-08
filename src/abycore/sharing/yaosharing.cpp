@@ -23,38 +23,47 @@
 
 
 void YaoSharing::Init() {
-	/* init the class for correctly sized Yao key operations*/
-	InitYaoKey(&m_pKeyOps, m_cCrypto->get_seclvl().symbits);
+    /* init the class for correctly sized Yao key operations*/
+    InitYaoKey(&m_pKeyOps, m_cCrypto->get_seclvl().symbits);
 
-	m_cBoolCircuit = new BooleanCircuit(m_pCircuit, m_eRole, m_eContext, m_cCircuitFileDir);
+    m_cBoolCircuit = new BooleanCircuit(m_pCircuit, m_eRole, m_eContext, m_cCircuitFileDir);
 
-	m_bZeroBuf = (BYTE*) calloc(m_nSecParamBytes, sizeof(BYTE));
-	m_bTempKeyBuf = (BYTE*) malloc(sizeof(BYTE) * AES_BYTES);
+    m_bZeroBuf = (BYTE*) calloc(m_nSecParamBytes, sizeof(BYTE));
+    m_bTempKeyBuf = (BYTE*) malloc(sizeof(BYTE) * AES_BYTES);
 
-	m_nGarbledTableCtr = 0;
+    m_nGarbledTableCtr = 0;
 
-	m_bResKeyBuf = (BYTE*) malloc(sizeof(BYTE) * AES_BYTES);
-	m_kGarble = (AES_KEY_CTX*) malloc(sizeof(AES_KEY_CTX));
-	m_cCrypto->init_aes_key(m_kGarble, (uint8_t*) m_vFixedKeyAESSeed);
+    m_bResKeyBuf = (BYTE*) malloc(sizeof(BYTE) * AES_BYTES);
+    m_kGarble = (AES_KEY_CTX*) malloc(sizeof(AES_KEY_CTX));
+    m_cCrypto->init_aes_key(m_kGarble, (uint8_t*) m_vFixedKeyAESSeed);
 
-	m_nSecParamIters = ceil_divide(m_nSecParamBytes, sizeof(UGATE_T));
+    m_nSecParamIters = ceil_divide(m_nSecParamBytes, sizeof(UGATE_T));
 }
 
 YaoSharing::~YaoSharing() {
-	delete m_pKeyOps;
-	delete m_cBoolCircuit;
-	free(m_bZeroBuf);
-	free(m_bTempKeyBuf);
-	free(m_bResKeyBuf);
-	m_cCrypto->clean_aes_key(m_kGarble);
-	free(m_kGarble);
+    delete m_pKeyOps;
+    delete m_cBoolCircuit;
+    free(m_bZeroBuf);
+    free(m_bTempKeyBuf);
+    free(m_bResKeyBuf);
+    m_cCrypto->clean_aes_key(m_kGarble);
+    free(m_kGarble);
 }
 
 BOOL YaoSharing::EncryptWire(BYTE* c, BYTE* p, uint32_t id)
 {
-	memset(m_bTempKeyBuf, 0, AES_BYTES);
+#ifdef THREEHALVES
+    memset(m_bTempKeyBuf, 0, AES_BYTES);
+    memcpy(m_bTempKeyBuf, (BYTE*) (&id), sizeof(uint32_t));
+    m_pKeyOps->XOR_DOUBLE_B(m_bTempKeyBuf, m_bTempKeyBuf, p);
+    //m_pKeyOps->XOR(m_bTempKeyBuf, m_bTempKeyBuf, p);
+    m_cCrypto->encrypt(m_kGarble, m_bResKeyBuf, m_bTempKeyBuf, AES_BYTES);
+
+    m_pKeyOps->XOR(c, m_bResKeyBuf, m_bTempKeyBuf);
+#else
+    memset(m_bTempKeyBuf, 0, AES_BYTES);
 	memcpy(m_bTempKeyBuf, (BYTE*) (&id), sizeof(uint32_t));
-	m_pKeyOps->XOR_DOUBLE_B(m_bTempKeyBuf, m_bTempKeyBuf, p);
+    m_pKeyOps->XOR_DOUBLE_B(m_bTempKeyBuf, m_bTempKeyBuf, p);
 	//m_pKeyOps->XOR(m_bTempKeyBuf, m_bTempKeyBuf, p);
 	m_cCrypto->encrypt(m_kGarble, m_bResKeyBuf, m_bTempKeyBuf, AES_BYTES);
 
@@ -67,33 +76,34 @@ BOOL YaoSharing::EncryptWire(BYTE* c, BYTE* p, uint32_t id)
 	std::cout << " to : ";
 	PrintKey(c);
 #endif
+#endif
 
-	return true;
+    return true;
 }
 
 BOOL YaoSharing::EncryptWireGRR3(BYTE* c, BYTE* p, BYTE* l, BYTE* r, uint32_t id)
 {
-	//cout << "Start with c = " << (unsigned long) c << ", p = " << (unsigned long) p << endl;
-	memset(m_bTempKeyBuf, 0, AES_BYTES);
-	memcpy(m_bTempKeyBuf, (BYTE*) (&id), sizeof(uint32_t));
-	//cout << "XOR left" << endl;
-	m_pKeyOps->XOR_DOUBLE_B(m_bTempKeyBuf, m_bTempKeyBuf, l);
-	//m_pKeyOps->XOR(m_bTempKeyBuf, m_bTempKeyBuf, l);//todo, this is a circular leftshift of l by one and an XOR
-	//cout << "XOR right " << endl;
-	m_pKeyOps->XOR_QUAD_B(m_bTempKeyBuf, m_bTempKeyBuf, r);
-	//m_pKeyOps->XOR(m_bTempKeyBuf, m_bTempKeyBuf, r);//todo, this is a circular leftshift of r by two and an XOR
+    //cout << "Start with c = " << (unsigned long) c << ", p = " << (unsigned long) p << endl;
+    memset(m_bTempKeyBuf, 0, AES_BYTES);
+    memcpy(m_bTempKeyBuf, (BYTE*) (&id), sizeof(uint32_t));
+    //cout << "XOR left" << endl;
+    m_pKeyOps->XOR_DOUBLE_B(m_bTempKeyBuf, m_bTempKeyBuf, l);
+    //m_pKeyOps->XOR(m_bTempKeyBuf, m_bTempKeyBuf, l);//todo, this is a circular leftshift of l by one and an XOR
+    //cout << "XOR right " << endl;
+    m_pKeyOps->XOR_QUAD_B(m_bTempKeyBuf, m_bTempKeyBuf, r);
+    //m_pKeyOps->XOR(m_bTempKeyBuf, m_bTempKeyBuf, r);//todo, this is a circular leftshift of r by two and an XOR
 
-	//MPC_AES_ENCRYPT(m_kGarble, m_bResKeyBuf, m_bTempKeyBuf);
-	m_cCrypto->encrypt(m_kGarble, m_bResKeyBuf, m_bTempKeyBuf, AES_BYTES);
+    //MPC_AES_ENCRYPT(m_kGarble, m_bResKeyBuf, m_bTempKeyBuf);
+    m_cCrypto->encrypt(m_kGarble, m_bResKeyBuf, m_bTempKeyBuf, AES_BYTES);
 
-	//cout << "XOR reskeybuf" << endl;
-	m_pKeyOps->XOR(m_bResKeyBuf, m_bResKeyBuf, m_bTempKeyBuf);
-	//cout << "Final XOR with c = " << (unsigned long) c << ", p = " << (unsigned long) p << endl;
-	m_pKeyOps->XOR(c, m_bResKeyBuf, p);
+    //cout << "XOR reskeybuf" << endl;
+    m_pKeyOps->XOR(m_bResKeyBuf, m_bResKeyBuf, m_bTempKeyBuf);
+    //cout << "Final XOR with c = " << (unsigned long) c << ", p = " << (unsigned long) p << endl;
+    m_pKeyOps->XOR(c, m_bResKeyBuf, p);
 
 
 #ifdef DEBUGYAO
-	cout << endl << " encrypting : ";
+    cout << endl << " encrypting : ";
 	PrintKey(p);
 	cout << " using: ";
 	PrintKey(l);
@@ -103,17 +113,17 @@ BOOL YaoSharing::EncryptWireGRR3(BYTE* c, BYTE* p, BYTE* l, BYTE* r, uint32_t id
 	PrintKey(c);
 #endif
 
-	return true;
+    return true;
 }
 
 
 void YaoSharing::PrintKey(BYTE* key) {
-	for (uint32_t i = 0; i < m_nSecParamBytes; i++) {
-		std::cout << std::setw(2) << std::setfill('0') << (std::hex) << (uint32_t) key[i];
-	}
-	std::cout << (std::dec);
+    for (uint32_t i = 0; i < m_nSecParamBytes; i++) {
+        std::cout << std::setw(2) << std::setfill('0') << (std::hex) << (uint32_t) key[i];
+    }
+    std::cout << (std::dec);
 }
 
 void YaoSharing::PrintPerformanceStatistics() {
-	std::cout <<  get_sharing_name(m_eContext) << ": ANDs: " << m_nANDGates << " ; Depth: " << GetMaxCommunicationRounds() << std::endl;
+    std::cout <<  get_sharing_name(m_eContext) << ": ANDs: " << m_nANDGates << " ; Depth: " << GetMaxCommunicationRounds() << std::endl;
 }

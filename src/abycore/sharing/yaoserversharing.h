@@ -33,209 +33,217 @@
 class YaoServerSharing: public YaoSharing {
 
 public:
-	/**
-	 Constructor of the class.
-	 */
-	YaoServerSharing(e_sharing context, e_role role, uint32_t sharebitlen, ABYCircuit* circuit, crypto* crypt, const std::string& circdir = ABY_CIRCUIT_DIR) :
-			YaoSharing(context, role, sharebitlen, circuit, crypt, circdir) {
-		InitServer();
-	}
-	;
-	/**
-	 Destructor of the class.
-	 */
-	~YaoServerSharing();
+    /**
+     Constructor of the class.
+     */
+    YaoServerSharing(e_sharing context, e_role role, uint32_t sharebitlen, ABYCircuit* circuit, crypto* crypt, const std::string& circdir = ABY_CIRCUIT_DIR) :
+            YaoSharing(context, role, sharebitlen, circuit, crypt, circdir) {
+        InitServer();
+    }
+    ;
+    /**
+     Destructor of the class.
+     */
+    ~YaoServerSharing();
 
-	//MEMBER FUNCTIONS FROM SUPER CLASS YAO SHARING
-	void Reset();
-	void PrepareSetupPhase(ABYSetup* setup);
-	void PerformSetupPhase(ABYSetup* setup);
-	void FinishSetupPhase(ABYSetup* setup);
-	void EvaluateLocalOperations(uint32_t level);
-	void EvaluateInteractiveOperations(uint32_t level);
-	void SendConversionValues(uint32_t gateid);
+    //MEMBER FUNCTIONS FROM SUPER CLASS YAO SHARING
+    void Reset();
+    void PrepareSetupPhase(ABYSetup* setup);
+    void PerformSetupPhase(ABYSetup* setup);
+    void FinishSetupPhase(ABYSetup* setup);
+    void EvaluateLocalOperations(uint32_t level);
+    void EvaluateInteractiveOperations(uint32_t level);
+    void SendConversionValues(uint32_t gateid);
 
-	void FinishCircuitLayer();
+    void FinishCircuitLayer();
 
-	void PrepareOnlinePhase();
+    void PrepareOnlinePhase();
 
-	void InstantiateGate(GATE* gate);
+    void InstantiateGate(GATE* gate);
 
-	void GetDataToSend(std::vector<BYTE*>& sendbuf, std::vector<uint64_t>& bytesize);
-	void GetBuffersToReceive(std::vector<BYTE*>& rcvbuf, std::vector<uint64_t>& rcvbytes);
+    void GetDataToSend(std::vector<BYTE*>& sendbuf, std::vector<uint64_t>& bytesize);
+    void GetBuffersToReceive(std::vector<BYTE*>& rcvbuf, std::vector<uint64_t>& rcvbytes);
 
-	uint32_t AssignInput(CBitVector& input);
-	uint32_t GetOutput(CBitVector& out);
+    uint32_t AssignInput(CBitVector& input);
+    uint32_t GetOutput(CBitVector& out);
 
-	const char* sharing_type() {
-		return "Yao server";
-	}
-	;
-	//ENDS HERE..
+    const char* sharing_type() {
+        return "Yao server";
+    }
+    ;
+    //ENDS HERE..
 
 private:
-	//Global constant key
-	CBitVector m_vR; /**< _____________*/
-	//Permutation bits for the servers input keys
-	CBitVector m_vPermBits; /**< _____________*/
-	//Random values from output of ot extension
-	std::vector<CBitVector> m_vROTMasks; /**< Masks_______________*/
-	uint32_t m_nClientInputKexIdx; /**< Client __________*/
-	uint32_t m_nClientInputKeyCtr; /**< Client __________*/
 
-	uint64_t m_nGarbledTableSndCtr;
+    //Global constant key
+    CBitVector m_vR; /**< _____________*/
+    //Permutation bits for the servers input keys
+    CBitVector m_vPermBits; /**< _____________*/
+    //Random values from output of ot extension
+    std::vector<CBitVector> m_vROTMasks; /**< Masks_______________*/
+    uint32_t m_nClientInputKexIdx; /**< Client __________*/
+    uint32_t m_nClientInputKeyCtr; /**< Client __________*/
 
-	CBitVector m_vServerKeySndBuf; /**< Server Key Sender Buffer*/
-	std::vector<CBitVector> m_vClientKeySndBuf; /**< Client Key Sender Buffer*/
-	CBitVector m_vClientROTRcvBuf; /**< Client ______________*/
+    uint64_t m_nGarbledTableSndCtr;
 
-	//std::vector<CBitVector> m_vClientConversionKeySndBuf;
-	//CBitVector			m_vClientCOnversionROTRcvBuf;
+    CBitVector m_vServerKeySndBuf; /**< Server Key Sender Buffer*/
+    std::vector<CBitVector> m_vClientKeySndBuf; /**< Client Key Sender Buffer*/
+    CBitVector m_vClientROTRcvBuf; /**< Client ______________*/
 
-	CBitVector m_vOutputShareSndBuf; /**< Output Share Sender Buffer.*/
-	CBitVector m_vOutputShareRcvBuf; /**< Output Share Receiver Buffer.*/
+    //std::vector<CBitVector> m_vClientConversionKeySndBuf;
+    //CBitVector			m_vClientCOnversionROTRcvBuf;
 
-	std::vector<GATE*> m_vServerOutputGates; /**< Server Output Gates*/
+    CBitVector m_vOutputShareSndBuf; /**< Output Share Sender Buffer.*/
+    CBitVector m_vOutputShareRcvBuf; /**< Output Share Receiver Buffer.*/
 
-	uint32_t m_nOutputShareRcvCtr; /**< Output Share Receiver Counter*/
+#ifdef THREEHALVES
+    CBitVector m_vServerOutputShare[2];
+    uint32_t m_nServerAllDestCtr;
+#endif
+    std::vector<GATE*> m_vServerOutputGates; /**< Server Output Gates*/
 
-	uint64_t m_nPermBitCtr; /**< _____________*/
-	uint64_t m_nServerInBitCtr; /**< _____________*/
+    uint32_t m_nOutputShareRcvCtr; /**< Output Share Receiver Counter*/
 
-	uint32_t m_nServerKeyCtr; /**< _____________*/
-	uint32_t m_nClientInBitCtr; /**< _____________*/
+    uint64_t m_nPermBitCtr; /**< _____________*/
+    uint64_t m_nServerInBitCtr; /**< _____________*/
 
-	uint8_t* m_bLMaskBuf[2]; /**< _____________*/
-	uint8_t* m_bRMaskBuf[2]; /**< _____________*/
-	uint8_t* m_bLKeyBuf; /**< _____________*/
-	uint8_t* m_bOKeyBuf[2]; /**< _____________*/
-	uint8_t* m_bTmpBuf;
-	//CBitVector
+    uint32_t m_nServerKeyCtr; /**< _____________*/
+    uint32_t m_nClientInBitCtr; /**< _____________*/
 
-	std::vector<uint32_t> m_vClientInputGate; /**< _____________*/
-	std::deque<input_gate_val_t> m_vPreSetInputGates;/**< _____________*/
-	std::deque<a2y_gate_pos_t> m_vPreSetA2YPositions;/**< _____________*/
-	e_role* m_vOutputDestionations; /** <  _____________*/
-	uint32_t m_nOutputDestionationsCtr;
+    uint8_t* m_bLMaskBuf[2]; /**< _____________*/
+    uint8_t* m_bRMaskBuf[2]; /**< _____________*/
+#ifdef THREEHALVES
+    uint8_t* m_bLRMaskBuf[2]; /**< _____________*/
+#endif
+    uint8_t* m_bLKeyBuf; /**< _____________*/
+    uint8_t* m_bOKeyBuf[2]; /**< _____________*/
+    uint8_t* m_bTmpBuf;
+    //CBitVector
+
+    std::vector<uint32_t> m_vClientInputGate; /**< _____________*/
+    std::deque<input_gate_val_t> m_vPreSetInputGates;/**< _____________*/
+    std::deque<a2y_gate_pos_t> m_vPreSetA2YPositions;/**< _____________*/
+    e_role* m_vOutputDestionations; /** <  _____________*/
+    uint32_t m_nOutputDestionationsCtr;
 
 
-	//std::deque<uint32_t> 			m_vClientInputGate;
+    //std::deque<uint32_t> 			m_vClientInputGate;
 
-	/**Initialising the server. */
-	void InitServer();
-	/**Initialising a new layer.*/
-	void InitNewLayer();
+    /**Initialising the server. */
+    void InitServer();
+    /**Initialising a new layer.*/
+    void InitNewLayer();
 
-	/**
-	 Creating Random wire keys.
-	 \param	vec 		Bit vector.
-	 \param 	numkeys		number of keys.
-	 */
-	void CreateRandomWireKeys(CBitVector& vec, uint32_t numkeys);
-	/**
-	 Creating and sending Garbled Circuit.
-	 \param 	setup 	ABYSetup Object.
-	 */
-	void CreateAndSendGarbledCircuit(ABYSetup* setup);
-	/**
-	 Receiving the garbled circuit object.
-	 */
-	void ReceiveGarbledCircuit();
-	/**
-	 Method for evaluating a Input gate for the inputted
-	 gate id.
-	 \param gateid	Gate Identifier
-	 */
-	void EvaluateInputGate(uint32_t gateid);
-	/**
-	 Method for evaluating XOR gate for the inputted
-	 gate object.
-	 \param gate		Gate Object
-	 */
-	void EvaluateXORGate(GATE* gate);
-	/**
-	 Method for evaluating AND gate for the inputted
-	 gate object.
-	 \param gate		Gate Object
-	 */
-	void EvaluateANDGate(GATE* gate, ABYSetup* setup);
-	/**
-	 Method for evaluating a Universal gate for the inputted
-	 gate object.
-	 \param gate		Gate Object
-	 */
-	void EvaluateUniversalGate(GATE* gate);
-	/**
-	 Method for evaluating SIMD gate for the inputted
-	 gateid.
-	 \param gateid		Gate identifier
-	 */
-	void EvaluateSIMDGate(uint32_t gateid);
-	/**
-	 Method for evaluating Inversion gate for the inputted
-	 gate object.
-	 \param gate		Gate Object
-	 */
-	void EvaluateInversionGate(GATE* gate);
-	/**
-	 Method for evaluating conversion gate for the inputted
-	 gateid.
-	 \param gateid		Gate Identifier
-	 */
-	void EvaluateConversionGate(uint32_t gateid);
-	/**
-	 Method for garbling a universal gate.
-	 \param ggate	gate Object.
-	 \param pos 		Position of the object in the queue.
-	 \param gleft	left gate in the queue.
-	 \param gright	right gate in the queue.
-	 \param ttable	the 4-bit truth table of the form x_0x_1x_2x_3
-	 */
-	void GarbleUniversalGate(GATE* ggate, uint32_t pos, GATE* gleft, GATE* gright, uint32_t ttable);
-	/**
-	 Method for creating garbled table.
-	 \param ggate	gate Object.
-	 \param pos 		Position of the object in the queue.
-	 \param gleft	left gate in the queue.
-	 \param gright	right gate in the queue.
-	 */
-	void CreateGarbledTable(GATE* ggate, uint32_t pos, GATE* gleft, GATE* gright);
-	/**
-	 PrecomputeGC______________
-	 \param queue 	Dequeue Object.
-	 \param setup	Is needed to perform pipelined sending of the circuit
-	 */
-	void PrecomputeGC(std::deque<uint32_t>& queue, ABYSetup* setup);
+    /**
+     Creating Random wire keys.
+     \param	vec 		Bit vector.
+     \param 	numkeys		number of keys.
+     */
+    void CreateRandomWireKeys(CBitVector& vec, uint32_t numkeys);
+    /**
+     Creating and sending Garbled Circuit.
+     \param 	setup 	ABYSetup Object.
+     */
+    void CreateAndSendGarbledCircuit(ABYSetup* setup);
+    /**
+     Receiving the garbled circuit object.
+     */
+    void ReceiveGarbledCircuit();
+    /**
+     Method for evaluating a Input gate for the inputted
+     gate id.
+     \param gateid	Gate Identifier
+     */
+    void EvaluateInputGate(uint32_t gateid);
+    /**
+     Method for evaluating XOR gate for the inputted
+     gate object.
+     \param gate		Gate Object
+     */
+    void EvaluateXORGate(GATE* gate);
+    /**
+     Method for evaluating AND gate for the inputted
+     gate object.
+     \param gate		Gate Object
+     */
+    void EvaluateANDGate(GATE* gate, ABYSetup* setup);
+    /**
+     Method for evaluating a Universal gate for the inputted
+     gate object.
+     \param gate		Gate Object
+     */
+    void EvaluateUniversalGate(GATE* gate);
+    /**
+     Method for evaluating SIMD gate for the inputted
+     gateid.
+     \param gateid		Gate identifier
+     */
+    void EvaluateSIMDGate(uint32_t gateid);
+    /**
+     Method for evaluating Inversion gate for the inputted
+     gate object.
+     \param gate		Gate Object
+     */
+    void EvaluateInversionGate(GATE* gate);
+    /**
+     Method for evaluating conversion gate for the inputted
+     gateid.
+     \param gateid		Gate Identifier
+     */
+    void EvaluateConversionGate(uint32_t gateid);
+    /**
+     Method for garbling a universal gate.
+     \param ggate	gate Object.
+     \param pos 		Position of the object in the queue.
+     \param gleft	left gate in the queue.
+     \param gright	right gate in the queue.
+     \param ttable	the 4-bit truth table of the form x_0x_1x_2x_3
+     */
+    void GarbleUniversalGate(GATE* ggate, uint32_t pos, GATE* gleft, GATE* gright, uint32_t ttable);
+    /**
+     Method for creating garbled table.
+     \param ggate	gate Object.
+     \param pos 		Position of the object in the queue.
+     \param gleft	left gate in the queue.
+     \param gright	right gate in the queue.
+     */
+    void CreateGarbledTable(GATE* ggate, uint32_t pos, GATE* gleft, GATE* gright);
+    /**
+     PrecomputeGC______________
+     \param queue 	Dequeue Object.
+     \param setup	Is needed to perform pipelined sending of the circuit
+     */
+    void PrecomputeGC(std::deque<uint32_t>& queue, ABYSetup* setup);
 
-	//void EvaluateClientOutputGate(GATE* gate);
-	void CollectClientOutputShares();
-	/**
-	 Method for evaluating a constant gate for the inputted
-	 gate id.
-	 \param gateid	Gate Identifier
-	 */
-	void EvaluateConstantGate(GATE* gate);
-	/**
-	 Method for evaluating Output gate for the inputted
-	 gate object.
-	 \param gate		Gate Object
-	 */
-	void EvaluateOutputGate(GATE* gate);
+    //void EvaluateClientOutputGate(GATE* gate);
+    void CollectClientOutputShares();
+    /**
+     Method for evaluating a constant gate for the inputted
+     gate id.
+     \param gateid	Gate Identifier
+     */
+    void EvaluateConstantGate(GATE* gate);
+    /**
+     Method for evaluating Output gate for the inputted
+     gate object.
+     \param gate		Gate Object
+     */
+    void EvaluateOutputGate(GATE* gate);
 
-	/**
-	 Send Server Keys from the given gateid.
-	 \param	gateid 	Gate Identifier
-	 */
-	void SendServerInputKey(uint32_t gateid);
-	/**
-	 Send Client Keys from the given gateid.
-	 \param	gateid 	Gate Identifier
-	 */
-	void SendClientInputKey(uint32_t gateid);
-	/**
-	 Method for assigning Output shares.
-	 */
-	void AssignOutputShares();
+    /**
+     Send Server Keys from the given gateid.
+     \param	gateid 	Gate Identifier
+     */
+    void SendServerInputKey(uint32_t gateid);
+    /**
+     Send Client Keys from the given gateid.
+     \param	gateid 	Gate Identifier
+     */
+    void SendClientInputKey(uint32_t gateid);
+    /**
+     Method for assigning Output shares.
+     */
+    void AssignOutputShares();
 };
 
 #endif /* __YAOSERVERSHARING_H__ */
